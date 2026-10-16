@@ -70,6 +70,9 @@ const FRAMEWORK_PACKAGES: Record<string, DetectedFramework> = {
   nuxt: { name: 'nuxt', class: 'c' },
   '@analogjs/platform': { name: 'analog', class: 'c' },
   astro: { name: 'astro', class: 'c' },
+  // Pracht's Vite plugin also targets Node, Vercel, and static hosts; only its
+  // Cloudflare adapter produces the Worker that Void deploys.
+  '@pracht/adapter-cloudflare': { name: 'pracht', class: 'c' },
 };
 
 /**

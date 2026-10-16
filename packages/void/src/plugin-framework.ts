@@ -44,6 +44,9 @@ const voidDir = dirname(fileURLToPath(import.meta.url));
 const ASTRO_SERVER_ENTRY = '@astrojs/cloudflare/entrypoints/server';
 const ASTRO_SCOPED_SERVER_ENTRY = '\0void:astro-server-entry';
 
+const PRACHT_SERVER_ENTRY = 'virtual:pracht/server';
+const PRACHT_DEV_SERVER_ENTRY = '\0void:pracht-dev-server-entry';
+
 export function createFrameworkPlugins(input: {
   readonly localD1: ReturnType<typeof resolveLocalD1Target>;
   readonly root: string;
@@ -303,6 +306,86 @@ export default {
         }
       : undefined;
 
+  // Pracht's Cloudflare adapter makes `virtual:pracht/server` the Worker entry.
+  // - The entry imports Void's env module, so it is evaluated when the Worker starts. Pracht
+  //   loads route modules lazily: otherwise the first request that reaches void/db would also
+  //   be the one that first evaluates the env module, before its `cloudflare:workers` import
+  //   has settled, and fail with "Cloudflare env is unavailable".
+  // - In dev, Void wraps the entry so `/__void/scheduled` and `/__void/queue` reach the
+  //   generated trigger dispatch, and, for PostgreSQL and MySQL, each request runs inside
+  //   Void's request scope as in the Astro wrapper above. The dispatch is imported only for
+  //   those requests, so the token it embeds never enters another module. Builds are not
+  //   wrapped: `pracht build` names its server bundle after this entry and imports the
+  //   bundle's named exports to prerender, and `void deploy` wraps the built `worker.js` for
+  //   crons and queues.
+  let prachtServe = false;
+  const prachtServerEntryPlugin: Plugin | undefined =
+    detected.name === 'pracht'
+      ? {
+          name: 'void:pracht-server-entry',
+          enforce: 'pre',
+          configResolved(resolvedConfig) {
+            prachtServe = resolvedConfig.command === 'serve';
+          },
+          transform: {
+            filter: { id: /^virtual:pracht\/server$/ },
+            handler(code) {
+              if (this.environment?.name === 'client') {
+                return;
+              }
+              return { code: `import ${JSON.stringify(envModuleFile)};\n${code}`, map: null };
+            },
+          },
+          resolveId: {
+            filter: { id: /^virtual:pracht\/server$/ },
+            handler(_id, importer) {
+              if (
+                !prachtServe ||
+                importer === PRACHT_DEV_SERVER_ENTRY ||
+                this.environment?.name === 'client'
+              ) {
+                return;
+              }
+              return PRACHT_DEV_SERVER_ENTRY;
+            },
+          },
+          load: {
+            // oxlint-disable-next-line no-control-regex -- \0 prefix is Vite's virtual module convention
+            filter: { id: /^\0void:pracht-dev-server-entry$/ },
+            handler() {
+              const scoped = dialect !== 'sqlite';
+              const body = `    if (request.method === "POST") {
+      const pathname = new URL(request.url).pathname;
+      if (pathname === "/__void/scheduled" || pathname === "/__void/queue") {
+        const { handleDevTrigger } = await import(${JSON.stringify(frameworkTriggersDispatchPath(root))});
+        const response = await handleDevTrigger(request, env, ctx);
+        if (response) return response;
+      }
+    }
+    return original.fetch(request, env, ctx);`;
+              return `import original from ${JSON.stringify(PRACHT_SERVER_ENTRY)};
+${scoped ? `import { withRuntimeEnv } from ${JSON.stringify(envModuleFile)};\n` : ''}export * from ${JSON.stringify(PRACHT_SERVER_ENTRY)};
+
+export default {
+  ...original,
+${
+  scoped
+    ? `  fetch(request, env, ctx) {
+    return withRuntimeEnv(env, async () => {
+${body.replace(/^/gm, '  ')}
+    });
+  },`
+    : `  async fetch(request, env, ctx) {
+${body}
+  },`
+}
+};
+`;
+            },
+          },
+        }
+      : undefined;
+
   // SvelteKit builds its server in Vite's Node `ssr` environment, and the adapter's Worker runs
   // that output as it is. For PostgreSQL and MySQL, void/db's driver then fails in workerd: pg
   // loads pg-cloudflare's Node stub, and CommonJS requires of Node built-ins become
@@ -365,6 +448,7 @@ export default {
     wranglerSyncPlugin,
     ...(nuxtVite8WebSocketCompatPlugin ? [nuxtVite8WebSocketCompatPlugin] : []),
     ...(astroServerEntryPlugin ? [astroServerEntryPlugin] : []),
+    ...(prachtServerEntryPlugin ? [prachtServerEntryPlugin] : []),
     svelteKitHooksInjectPlugin,
     ...(svelteKitWorkerBuildPlugin ? [svelteKitWorkerBuildPlugin] : []),
     clientStubsPlugin,
@@ -399,6 +483,8 @@ export default {
     ...(detected.name === 'astro'
       ? [createBareVoidRedirectPlugin(), astroDevTriggerInjectPlugin(root)]
       : []),
+    // So does pracht, through its Cloudflare adapter.
+    ...(detected.name === 'pracht' ? [createBareVoidRedirectPlugin()] : []),
     implicitDeployGuard,
   ];
 }
