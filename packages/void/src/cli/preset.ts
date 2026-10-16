@@ -68,7 +68,7 @@ export type FrameworkPreset = {
   hashedAssetsPrefix?: string;
   /** Whether the worker entry needs bundling (bare imports not resolved by framework build). */
   bundle?: boolean;
-  /** Asset trailing-slash policy the framework's Worker relies on. Cloudflare's default applies when unset. */
+  /** Assets `html_handling`; Cloudflare's default applies when unset. */
   htmlHandling?: 'auto-trailing-slash' | 'force-trailing-slash' | 'drop-trailing-slash' | 'none';
 };
 
@@ -151,9 +151,6 @@ export const FRAMEWORK_PRESETS: Record<string, FrameworkPreset> = {
     assetsDir: 'dist/client',
     hashedAssetsPrefix: '_astro',
   },
-  // `pracht build` prerenders after its Vite builds, then writes `worker.js`:
-  // `server.js` beside it also exports the prerender metadata, which workerd
-  // rejects as entrypoints.
   pracht: {
     cloudflareArtifact: 'worker-output',
     cloudflareCompatibilityFlags: ['nodejs_als'],
@@ -162,8 +159,7 @@ export const FRAMEWORK_PRESETS: Record<string, FrameworkPreset> = {
     workerMain: 'worker.js',
     assetsDir: 'dist/client',
     hashedAssetsPrefix: 'assets',
-    // The Worker reads prerendered `/about/index.html` through ASSETS for `/about`; the
-    // default policy answers that read with a redirect to `/about/`.
+    // pracht links to `/about`, not `/about/`.
     htmlHandling: 'drop-trailing-slash',
   },
 };

@@ -1297,7 +1297,6 @@ describe('pracht server entry', () => {
   const loadedCode = (loaded: unknown): string =>
     typeof loaded === 'string' ? loaded : ((loaded as { code?: string } | null)?.code ?? '');
 
-  /** Import the wrapper with stand-ins for pracht's entry and the generated trigger dispatch. */
   async function importWrapper(
     root: string,
     code: string,
@@ -1340,14 +1339,12 @@ export default {
       try {
         const container = server.environments.ssr!.pluginContainer;
         expect((await container.resolveId(entry))?.id).toBe(devEntry);
-        // The wrapper imports pracht's own entry.
         expect((await container.resolveId(entry, devEntry))?.id).not.toBe(devEntry);
         code = loadedCode(await container.load(devEntry));
       } finally {
         await server.close();
       }
       expect(code.includes('withRuntimeEnv')).toBe(database !== undefined);
-      // The dispatch embeds the dev-trigger token: it is imported only for a trigger request.
       expect(code).not.toMatch(/^import .*dev-triggers/m);
 
       const wrapper = await importWrapper(

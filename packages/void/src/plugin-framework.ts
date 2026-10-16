@@ -306,18 +306,9 @@ export default {
         }
       : undefined;
 
-  // Pracht's Cloudflare adapter makes `virtual:pracht/server` the Worker entry.
-  // - The entry imports Void's env module, so it is evaluated when the Worker starts. Pracht
-  //   loads route modules lazily: otherwise the first request that reaches void/db would also
-  //   be the one that first evaluates the env module, before its `cloudflare:workers` import
-  //   has settled, and fail with "Cloudflare env is unavailable".
-  // - In dev, Void wraps the entry so `/__void/scheduled` and `/__void/queue` reach the
-  //   generated trigger dispatch, and, for PostgreSQL and MySQL, each request runs inside
-  //   Void's request scope as in the Astro wrapper above. The dispatch is imported only for
-  //   those requests, so the token it embeds never enters another module. Builds are not
-  //   wrapped: `pracht build` names its server bundle after this entry and imports the
-  //   bundle's named exports to prerender, and `void deploy` wraps the built `worker.js` for
-  //   crons and queues.
+  // Pracht loads routes lazily, so its entry imports the env module up front; otherwise the
+  // first void/db call can run before `cloudflare:workers` has settled. Only dev wraps the
+  // entry for triggers: `void deploy` wraps the built `worker.js` instead.
   let prachtServe = false;
   const prachtServerEntryPlugin: Plugin | undefined =
     detected.name === 'pracht'
@@ -483,7 +474,6 @@ ${body}
     ...(detected.name === 'astro'
       ? [createBareVoidRedirectPlugin(), astroDevTriggerInjectPlugin(root)]
       : []),
-    // So does pracht, through its Cloudflare adapter.
     ...(detected.name === 'pracht' ? [createBareVoidRedirectPlugin()] : []),
     implicitDeployGuard,
   ];
