@@ -6,6 +6,7 @@ const artifacts = {
   analog: ['dist/analog/server/index.mjs', 'dist/analog/public'],
   astro: ['dist/server/entry.mjs'],
   nuxt: ['.output/server/index.mjs', '.output/public'],
+  pracht: ['dist/server/worker.js', 'dist/client'],
   'react-router': ['build/server/index.js', 'build/client'],
   sveltekit: ['.svelte-kit/cloudflare/_worker.js'],
   'tanstack-start': ['dist/server/index.js', 'dist/client'],

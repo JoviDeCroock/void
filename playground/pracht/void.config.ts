@@ -1,0 +1,11 @@
+import { defineConfig } from 'void/config';
+
+export default defineConfig({
+  cloudflare: {
+    name: 'playground-pracht',
+    compatibility_date: '2026-02-24',
+    compatibility_flags: ['nodejs_als'],
+    d1_databases: [{ binding: 'DB', database_name: 'default', database_id: 'local' }],
+    kv_namespaces: [{ binding: 'KV', id: 'local' }],
+  },
+});

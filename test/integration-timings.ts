@@ -32,6 +32,7 @@ export const integrationTimings: Readonly<Record<string, number>> = {
   'packages/void/test/integration/pg-api-test.test.ts': 11000,
   'packages/void/test/integration/pg-test.test.ts': 16237,
   'packages/void/test/integration/plugin-env-schema.test.ts': 236,
+  'packages/void/test/integration/pracht.test.ts': 30000,
   'packages/void/test/integration/prepare-cli.test.ts': 1957,
   'packages/void/test/integration/queue-dispatch.test.ts': 208,
   'packages/void/test/integration/react-router.test.ts': 21000,

@@ -1,0 +1,24 @@
+{
+  "name": "playground-pracht",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pracht build",
+    "dev": "pracht dev"
+  },
+  "dependencies": {
+    "@pracht/adapter-cloudflare": "catalog:",
+    "@pracht/core": "catalog:",
+    "preact": "catalog:"
+  },
+  "devDependencies": {
+    "@pracht/cli": "catalog:",
+    "@pracht/vite-plugin": "catalog:",
+    "preact-render-to-string": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "void": "workspace:*",
+    "wrangler": "catalog:"
+  }
+}

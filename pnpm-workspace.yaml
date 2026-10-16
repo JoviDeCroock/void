@@ -46,6 +46,10 @@ catalog:
   '@cloudflare/vite-plugin': ^1.64.0
   '@cloudflare/workers-auth': ^0.14.0
   '@nkzw/fate': 1.7.7
+  '@pracht/adapter-cloudflare': ^0.9.0
+  '@pracht/cli': ^1.16.1
+  '@pracht/core': ^0.20.1
+  '@pracht/vite-plugin': ^0.16.0
   '@vitejs/plugin-react': ^6.1.2
   '@vitejs/plugin-rsc': ^0.5.37
   astro: ^7.3.8
@@ -54,6 +58,8 @@ catalog:
   nuxt: ^4.6.1
   playwright: ^1.64.0
   postal-mime: ^4.0.5
+  preact: ^10.27.2
+  preact-render-to-string: ^6.7.0
   react-fate: 1.7.7
   reka-ui: 2.11.0
   rolldown: ^1.2.13
